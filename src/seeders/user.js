@@ -32,9 +32,16 @@ const usersData = [
 // Función para crear usuarios de prueba
 export const seedUsers = async () => {
     try {
-        // Limpiar la colección de usuarios existentes
-        await User.deleteMany({});
-        console.log('✅ Colección de usuarios limpiada');
+        // Verificar si ya existen usuarios en la base de datos
+        const existingUsersCount = await User.countDocuments();
+        
+        if (existingUsersCount > 0) {
+            console.log(`ℹ️  Ya existen ${existingUsersCount} usuarios en la base de datos`);
+            console.log('⏭️  Saltando seeding de usuarios (datos ya existen)');
+            return;
+        }
+        
+        console.log('🔄 No se encontraron usuarios existentes, procediendo con el seeding...');
 
         // Crear usuarios de prueba
         for (const userData of usersData) {
@@ -55,6 +62,38 @@ export const seedUsers = async () => {
         
     } catch (error) {
         console.error('❌ Error durante el seeding de usuarios:', error);
+        throw error;
+    }
+};
+
+// Función para forzar el seeding (limpia y recrea los datos)
+export const seedUsersForce = async () => {
+    try {
+        console.log('🔄 Forzando seeding de usuarios...');
+        
+        // Limpiar la colección de usuarios existentes
+        await User.deleteMany({});
+        console.log('✅ Colección de usuarios limpiada');
+
+        // Crear usuarios de prueba
+        for (const userData of usersData) {
+            const user = new User(userData);
+            await user.save();
+            console.log(`✅ Usuario creado: ${userData.username} (${userData.email})`);
+        }
+
+        console.log('🎉 Seeding forzado de usuarios completado exitosamente');
+        console.log(`📊 Total usuarios creados: ${usersData.length}`);
+        
+        // Mostrar información de los usuarios creados
+        const createdUsers = await User.find().select('-password');
+        console.log('\n📋 Usuarios en la base de datos:');
+        createdUsers.forEach(user => {
+            console.log(`- ${user.username} (${user.email}) - Roles: ${user.roles.join(', ')}`);
+        });
+        
+    } catch (error) {
+        console.error('❌ Error durante el seeding forzado de usuarios:', error);
         throw error;
     }
 };

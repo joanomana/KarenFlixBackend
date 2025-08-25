@@ -8,8 +8,8 @@ export const generalLimiter = rateLimit({
         success: false,
         message: 'Demasiadas peticiones desde esta IP, intenta de nuevo más tarde.'
     },
-    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    standardHeaders: true, 
+    legacyHeaders: false,
 });
 
 // Rate limiter más estricto para rutas de autenticación

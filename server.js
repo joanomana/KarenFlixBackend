@@ -2,14 +2,14 @@ import 'dotenv/config';
 import http from 'http';
 import app from './app.js';
 import { connectDB } from './src/config/db.js';
-import { runSeed } from './src/seed/index.js';
+import { runAllSeeders } from './src/seeders/index.js';
 
 const PORT = Number(process.env.PORT || 4000);
 const HOST = 'localhost';
 
 async function start() {
     await connectDB();   
-    await runSeed();    
+    await runAllSeeders();    
 
     const server = http.createServer(app);
     server.listen(PORT, HOST, () => {

@@ -14,6 +14,9 @@ import authRoutes from './src/routes/auth.route.js';
 import userRoutes from './src/routes/user.route.js';
 import mediaRoutes from './src/routes/media.route.js';
 
+// Configurar Swagger
+import swaggerSetup from './src/config/swagger.js';
+
 // Cargar variables de entorno
 dotenv.config();
 
@@ -24,7 +27,7 @@ app.use(helmet());
 
 // CORS
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3001',
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
     credentials: true
 }));
 
@@ -56,6 +59,9 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/media', mediaRoutes);
 
+// Configurar Swagger en /api/v1/docs
+swaggerSetup(app, '/api/v1/docs');
+
 // Ruta para manejar rutas no encontradas
 app.use('*', (req, res) => {
     res.status(404).json({
@@ -67,4 +73,6 @@ app.use('*', (req, res) => {
 // Manejo de errores centralizado
 app.use(errorHandler);
 
+
+    
 export default app;

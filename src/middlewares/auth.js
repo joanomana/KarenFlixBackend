@@ -25,7 +25,7 @@ export const authenticateToken = async (req, res, next) => {
             });
         }
 
-        req.user = { _id: user._id, username: user.username, email: user.email, roles: user.roles };
+        req.user = { _id: user._id, username: user.username, email: user.email, role: user.role };
 
         next();
     } catch (error) {
@@ -58,7 +58,7 @@ export const requireRole = (...roles) => {
             });
         }
 
-        const hasRole = roles.some(role => req.user.roles.includes(role));
+        const hasRole = roles.includes(req.user.role);
         
         if (!hasRole) {
             return res.status(403).json({
@@ -77,8 +77,8 @@ export const requireAdmin = requireRole('admin');
 // Middleware para verificar que el usuario puede acceder a sus propios datos
 export const requireOwnershipOrAdmin = (req, res, next) => {
     const requestedUserId = req.params.id;
-    const currentUserId = req.user.userId.toString();
-    const isAdmin = req.user.roles.includes('admin');
+    const currentUserId = req.user._id.toString();
+    const isAdmin = req.user.role === 'admin';
 
     if (currentUserId === requestedUserId || isAdmin) {
         next();

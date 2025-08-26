@@ -31,7 +31,7 @@ export class UserService {
                     id: user._id,
                     username: user.username,
                     email: user.email,
-                    roles: user.roles,
+                    role: user.role,
                     isAdmin: user.isAdmin()
                 }
             };
@@ -43,7 +43,7 @@ export class UserService {
     // Crear usuario con validaciones adicionales
     static async createUser(userData) {
         try {
-            const { username, email, password, roles } = userData;
+            const { username, email, password, role } = userData;
 
             // Verificar si el usuario ya existe
             const existingUser = await User.findOne({
@@ -62,7 +62,7 @@ export class UserService {
                 username,
                 email,
                 password, // Se hashea automáticamente en el middleware
-                roles: roles || ['user']
+                role: role || 'user'
             });
 
             await user.save();
@@ -73,7 +73,7 @@ export class UserService {
                     id: user._id,
                     username: user.username,
                     email: user.email,
-                    roles: user.roles,
+                    role: user.role,
                     createdAt: user.createdAt
                 }
             };

@@ -12,6 +12,7 @@ import passport from './src/config/passport.js';
 // Importar rutas
 import authRoutes from './src/routes/auth.route.js';
 import userRoutes from './src/routes/user.route.js';
+import mediaRoutes from './src/routes/media.route.js';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -53,6 +54,7 @@ app.get('/health', (_req, res) => {
 // Rutas principales
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/media', mediaRoutes);
 
 // Ruta para manejar rutas no encontradas
 app.use('*', (req, res) => {

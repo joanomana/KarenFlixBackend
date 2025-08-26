@@ -130,3 +130,19 @@ export default {
     validatePasswordChange,
     validateIdParam
 };
+
+
+// Validación para sugerir media
+export const validateMediaSuggestion = [
+  body('title').trim().isLength({ min: 2, max: 200 }).withMessage('Título requerido (2-200)'),
+  body('type').isIn(['movie','anime','series']).withMessage('type debe ser movie|anime|series'),
+  body('description').trim().isLength({ min: 10 }).withMessage('Descripción mínima de 10 caracteres'),
+  body('year').isInt({ min: 1880, max: new Date().getFullYear() }).withMessage('Año inválido'),
+  body('category').custom(v => {
+    if (!v) throw new Error('Categoría requerida');
+    if (typeof v === 'string' && v.trim().length > 0) return true; // nombre simple
+    if (typeof v === 'object' && (v.name || v._id)) return true; // objeto con name o _id
+    throw new Error('Categoría inválida');
+  }),
+  handleValidationErrors
+];

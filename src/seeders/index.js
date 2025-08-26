@@ -1,3 +1,4 @@
+import { seedMedia } from './media.js';
 import { seedUsers } from './user.js';
 
 /**
@@ -5,7 +6,9 @@ import { seedUsers } from './user.js';
  * Solo ejecuta si no existen datos previos
  */
 export const runAllSeeders = async () => {
-    try {
+    
+    await seedMedia();
+try {
         console.log('🌱 Iniciando proceso de seeding...');
         
         // Lista de seeders disponibles

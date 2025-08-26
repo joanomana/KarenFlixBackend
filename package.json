@@ -7,9 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon server.js",
     "dev": "nodemon server.js",
-    "seed": "node -e \"import('./src/seeders/index.js').then(m => m.runAllSeeders().then(() => process.exit(0)).catch(e => {console.error(e); process.exit(1)}))\"",
-    "seed:users": "node src/seeders/user.js",
-    "seed:force": "node -e \"import('./src/seeders/user.js').then(m => m.seedUsersForce().then(() => process.exit(0)).catch(e => {console.error(e); process.exit(1)}))\""
+    "seed": "node -e \"import('./src/seeders/index.js').then(m => m.runAllSeeders().then(() => process.exit(0)).catch(e => {console.error(e); process.exit(1)}))\""
   },
   "keywords": [],
   "author": "",

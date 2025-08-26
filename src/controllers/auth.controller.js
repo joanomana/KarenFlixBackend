@@ -30,7 +30,7 @@ const generateRefreshToken = (userId) => {
 // Registro de usuario
 export const register = async (req, res, next) => {
     try {
-        const { username, email, password, roles } = req.body;
+        const { username, email, password, role } = req.body;
 
         // Verificar si el usuario ya existe
         const existingUser = await User.findOne({
@@ -49,7 +49,7 @@ export const register = async (req, res, next) => {
             username,
             email,
             password,
-            roles: roles || ['user']
+            role: role || 'user'
         });
 
         await user.save();
@@ -66,7 +66,7 @@ export const register = async (req, res, next) => {
                     id: user._id,
                     username: user.username,
                     email: user.email,
-                    roles: user.roles,
+                    role: user.role,
                     createdAt: user.createdAt
                 },
                 token,
@@ -116,7 +116,7 @@ export const login = async (req, res, next) => {
                     id: user._id,
                     username: user.username,
                     email: user.email,
-                    roles: user.roles,
+                    role: user.role,
                     isAdmin: user.isAdmin()
                 },
                 token,
@@ -211,7 +211,7 @@ export const getProfile = async (req, res, next) => {
                     id: user._id,
                     username: user.username,
                     email: user.email,
-                    roles: user.roles,
+                    role: user.role,
                     isAdmin: user.isAdmin(),
                     createdAt: user.createdAt,
                     updatedAt: user.updatedAt
@@ -253,7 +253,7 @@ export const updateProfile = async (req, res, next) => {
                     id: user._id,
                     username: user.username,
                     email: user.email,
-                    roles: user.roles,
+                    role: user.role,
                     isAdmin: user.isAdmin(),
                     updatedAt: user.updatedAt
                 }

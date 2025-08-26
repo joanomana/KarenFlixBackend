@@ -12,7 +12,7 @@ export const getAllUsers = async (req, res, next) => {
         // Filtros opcionales
         const filter = {};
         if (req.query.role) {
-            filter.roles = { $in: [req.query.role] };
+            filter.role = req.query.role;
         }
         if (req.query.search) {
             filter.$or = [
@@ -40,6 +40,14 @@ export const getUserById = async (req, res, next) => {
     try {
         const { id } = req.params;
         
+        // Verificar que el ID existe
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de usuario es requerido'
+            });
+        }
+
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 success: false,
@@ -68,7 +76,7 @@ export const getUserById = async (req, res, next) => {
 // Crear un nuevo usuario
 export const createUser = async (req, res, next) => {
     try {
-        const { username, email, password, roles } = req.body;
+        const { username, email, password, role } = req.body;
 
         // Validar campos requeridos
         if (!username || !email || !password) {
@@ -95,7 +103,7 @@ export const createUser = async (req, res, next) => {
             username,
             email,
             password,
-            roles: roles || ['user']
+            role: role || 'user'
         });
 
         await user.save();
@@ -107,7 +115,7 @@ export const createUser = async (req, res, next) => {
                 id: user._id,
                 username: user.username,
                 email: user.email,
-                roles: user.roles,
+                role: user.role,
                 createdAt: user.createdAt
             }
         });
@@ -122,22 +130,35 @@ export const createUser = async (req, res, next) => {
     }
 };
 
-// Actualizar un usuario
+// Actualizar un usuario (solo administradores pueden cambiar todos los campos)
 export const updateUser = async (req, res, next) => {
     try {
         const { id } = req.params;
         const updates = req.body;
 
+        // Verificar que el ID existe
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de usuario es requerido'
+            });
+        }
+
+        // Validar formato del ID
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 success: false,
                 message: 'ID de usuario inválido'
             });
         }
-        if (updates.password) {
+
+        // Solo los administradores pueden cambiar la contraseña a través de este endpoint
+        // Los usuarios normales deben usar /change-password
+        if (updates.password && req.user.role !== 'admin') {
             delete updates.password;
         }
 
+        // Actualizar el usuario
         const user = await User.findByIdAndUpdate(
             id,
             updates,
@@ -172,6 +193,14 @@ export const deleteUser = async (req, res, next) => {
     try {
         const { id } = req.params;
 
+        // Verificar que el ID existe
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de usuario es requerido'
+            });
+        }
+
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 success: false,
@@ -203,6 +232,14 @@ export const changePassword = async (req, res, next) => {
         const { id } = req.params;
         const { currentPassword, newPassword } = req.body;
 
+        // Verificar que el ID existe
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de usuario es requerido'
+            });
+        }
+
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 success: false,
@@ -217,10 +254,13 @@ export const changePassword = async (req, res, next) => {
             });
         }
 
-        if (newPassword.length < 6) {
+        // Usar el método de validación del modelo
+        try {
+            User.validatePassword(newPassword);
+        } catch (error) {
             return res.status(400).json({
                 success: false,
-                message: 'La nueva contraseña debe tener al menos 6 caracteres'
+                message: error.message
             });
         }
 
@@ -252,6 +292,84 @@ export const changePassword = async (req, res, next) => {
             message: 'Contraseña actualizada exitosamente'
         });
     } catch (error) {
+        next(error);
+    }
+};
+
+// Actualizar datos limitados del usuario (solo username para usuarios normales)
+export const updateUserSelf = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+
+        // Verificar que el ID existe
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de usuario es requerido'
+            });
+        }
+
+        // Validar formato del ID
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de usuario inválido'
+            });
+        }
+
+        // Verificar que el usuario solo puede editar sus propios datos
+        if (req.user._id.toString() !== id) {
+            return res.status(403).json({
+                success: false,
+                message: 'Solo puedes editar tus propios datos'
+            });
+        }
+
+        // Solo permitir actualizar username
+        const allowedUpdates = ['username'];
+        const filteredUpdates = {};
+        
+        allowedUpdates.forEach(key => {
+            if (updates[key] !== undefined) {
+                filteredUpdates[key] = updates[key];
+            }
+        });
+
+        // Verificar que hay algo que actualizar
+        if (Object.keys(filteredUpdates).length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No hay campos válidos para actualizar'
+            });
+        }
+
+        // Actualizar el usuario
+        const user = await User.findByIdAndUpdate(
+            id,
+            filteredUpdates,
+            { new: true, runValidators: true }
+        ).select('-password');
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Datos actualizados exitosamente',
+            data: user
+        });
+    } catch (error) {
+        if (error.code === 11000) {
+            return res.status(409).json({
+                success: false,
+                message: 'El nombre de usuario ya existe'
+            });
+        }
         next(error);
     }
 };

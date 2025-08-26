@@ -6,26 +6,26 @@ const usersData = [
     {
         username: 'admin',
         email: 'admin@example.com',
-        password: 'admin123', // Se hasheará automáticamente
-        roles: ['admin', 'user']
+        password: 'Admin123', // Se hasheará automáticamente
+        role: 'admin'
     },
     {
         username: 'johndoe',
         email: 'john@example.com',
-        password: 'password123',
-        roles: ['user']
+        password: 'Password123',
+        role: 'user'
     },
     {
         username: 'janedoe',
         email: 'jane@example.com',
-        password: 'password456',
-        roles: ['user']
+        password: 'Password456',
+        role: 'user'
     },
     {
         username: 'moderator',
         email: 'mod@example.com',
-        password: 'mod12345',
-        roles: ['user']
+        password: 'Mod12345',
+        role: 'user'
     }
 ];
 
@@ -37,11 +37,10 @@ export const seedUsers = async () => {
         
         if (existingUsersCount > 0) {
             console.log(`ℹ️  Ya existen ${existingUsersCount} usuarios en la base de datos`);
-            console.log('⏭️  Saltando seeding de usuarios (datos ya existen)');
             return;
         }
         
-        console.log('🔄 No se encontraron usuarios existentes, procediendo con el seeding...');
+        console.log('🔄 Procediendo con el seeding de usuarios...');
 
         // Crear usuarios de prueba
         for (const userData of usersData) {
@@ -57,7 +56,7 @@ export const seedUsers = async () => {
         const createdUsers = await User.find().select('-password');
         console.log('\n📋 Usuarios en la base de datos:');
         createdUsers.forEach(user => {
-            console.log(`- ${user.username} (${user.email}) - Roles: ${user.roles.join(', ')}`);
+            console.log(`- ${user.username} (${user.email}) - Rol: ${user.role}`);
         });
         
     } catch (error) {
@@ -89,7 +88,7 @@ export const seedUsersForce = async () => {
         const createdUsers = await User.find().select('-password');
         console.log('\n📋 Usuarios en la base de datos:');
         createdUsers.forEach(user => {
-            console.log(`- ${user.username} (${user.email}) - Roles: ${user.roles.join(', ')}`);
+            console.log(`- ${user.username} (${user.email}) - Rol: ${user.role}`);
         });
         
     } catch (error) {

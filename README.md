@@ -234,7 +234,7 @@ Este proyecto está bajo la Licencia ISC.
 
 ## 🔮 Próximas Funcionalidades
 
-- [ ] CRUD de películas/series
+- [ ] CRUD de películas / series
 - [ ] Sistema de reseñas y ratings  
 - [ ] Sistema de likes/dislikes
 - [ ] Categorías y filtros
@@ -244,3 +244,4 @@ Este proyecto está bajo la Licencia ISC.
 - [ ] Subida de imágenes
 - [ ] Notificaciones
 - [ ] Cache con Redis
+ 

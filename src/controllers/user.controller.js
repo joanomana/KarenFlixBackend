@@ -1,6 +1,8 @@
 import User from '../models/User.js';
 import mongoose from 'mongoose';
 import { successResponse, errorResponse, paginatedResponse } from '../utils/responses.js';
+import validatePassword from '../middlewares/passwordValidation.js';
+import validateMongoId from '../middlewares/validateMongoId.js';
 
 // Obtener todos los usuarios con paginación
 export const getAllUsers = async (req, res, next) => {
@@ -36,265 +38,164 @@ export const getAllUsers = async (req, res, next) => {
 };
 
 // Obtener un usuario por ID
-export const getUserById = async (req, res, next) => {
-    try {
-        const { id } = req.params;
-        
-        // Verificar que el ID existe
-        if (!id) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de usuario es requerido'
-            });
-        }
+export const getUserById = [
+    validateMongoId,
+    async (req, res, next) => {
+        try {
+            const { id } = req.params;
 
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de usuario inválido'
-            });
-        }
-
-        const user = await User.findById(id).select('-password');
-        
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'Usuario no encontrado'
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            data: user
-        });
-    } catch (error) {
-        next(error);
-    }
-};
-
-// Crear un nuevo usuario
-export const createUser = async (req, res, next) => {
-    try {
-        const { username, email, password, role } = req.body;
-
-        // Validar campos requeridos
-        if (!username || !email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: 'Username, email y password son requeridos'
-            });
-        }
-
-        // Verificar si el usuario ya existe
-        const existingUser = await User.findOne({
-            $or: [{ email }, { username }]
-        });
-
-        if (existingUser) {
-            return res.status(409).json({
-                success: false,
-                message: 'El usuario o email ya existe'
-            });
-        }
-
-        // Crear el usuario (la contraseña se hashea automáticamente con el middleware pre('save'))
-        const user = new User({
-            username,
-            email,
-            password,
-            role: role || 'user'
-        });
-
-        await user.save();
-
-        res.status(201).json({
-            success: true,
-            message: 'Usuario creado exitosamente',
-            data: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                role: user.role,
-                createdAt: user.createdAt
+            const user = await User.findById(id).select('-password');
+            
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Usuario no encontrado'
+                });
             }
-        });
-    } catch (error) {
-        if (error.code === 11000) {
-            return res.status(409).json({
-                success: false,
-                message: 'El usuario o email ya existe'
+
+            res.status(200).json({
+                success: true,
+                data: user
             });
+        } catch (error) {
+            next(error);
         }
-        next(error);
     }
-};
+];
 
 // Actualizar un usuario (solo administradores pueden cambiar todos los campos)
-export const updateUser = async (req, res, next) => {
-    try {
-        const { id } = req.params;
-        const updates = req.body;
+export const updateUser = [
+    validateMongoId,
+    async (req, res, next) => {
+        try {
+            const { id } = req.params;
+            const updates = req.body;
 
-        // Verificar que el ID existe
-        if (!id) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de usuario es requerido'
+            // Solo los administradores pueden cambiar la contraseña a través de este endpoint
+            // Los usuarios normales deben usar /change-password
+            if (updates.password && req.user.role !== 'admin') {
+                delete updates.password;
+            }
+
+            // Actualizar el usuario
+            const user = await User.findByIdAndUpdate(
+                id,
+                updates,
+                { new: true, runValidators: true }
+            ).select('-password');
+
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Usuario no encontrado'
+                });
+            }
+
+            res.status(200).json({
+                success: true,
+                message: 'Usuario actualizado exitosamente',
+                data: user
             });
+        } catch (error) {
+            if (error.code === 11000) {
+                return res.status(409).json({
+                    success: false,
+                    message: 'El usuario o email ya existe'
+                });
+            }
+            next(error);
         }
-
-        // Validar formato del ID
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de usuario inválido'
-            });
-        }
-
-        // Solo los administradores pueden cambiar la contraseña a través de este endpoint
-        // Los usuarios normales deben usar /change-password
-        if (updates.password && req.user.role !== 'admin') {
-            delete updates.password;
-        }
-
-        // Actualizar el usuario
-        const user = await User.findByIdAndUpdate(
-            id,
-            updates,
-            { new: true, runValidators: true }
-        ).select('-password');
-
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'Usuario no encontrado'
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: 'Usuario actualizado exitosamente',
-            data: user
-        });
-    } catch (error) {
-        if (error.code === 11000) {
-            return res.status(409).json({
-                success: false,
-                message: 'El usuario o email ya existe'
-            });
-        }
-        next(error);
     }
-};
+];
 
 // Eliminar un usuario
-export const deleteUser = async (req, res, next) => {
-    try {
-        const { id } = req.params;
+export const deleteUser = [
+    validateMongoId,
+    async (req, res, next) => {
+        try {
+            const { id } = req.params;
 
-        // Verificar que el ID existe
-        if (!id) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de usuario es requerido'
+            const user = await User.findByIdAndDelete(id);
+
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Usuario no encontrado'
+                });
+            }
+
+            res.status(200).json({
+                success: true,
+                message: 'Usuario eliminado exitosamente'
             });
+        } catch (error) {
+            next(error);
         }
-
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de usuario inválido'
-            });
-        }
-
-        const user = await User.findByIdAndDelete(id);
-
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'Usuario no encontrado'
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: 'Usuario eliminado exitosamente'
-        });
-    } catch (error) {
-        next(error);
     }
-};
+];
 
 // Cambiar contraseña
-export const changePassword = async (req, res, next) => {
-    try {
-        const { id } = req.params;
-        const { currentPassword, newPassword } = req.body;
-
-        // Verificar que el ID existe
-        if (!id) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de usuario es requerido'
-            });
-        }
-
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de usuario inválido'
-            });
-        }
-
-        if (!currentPassword || !newPassword) {
-            return res.status(400).json({
-                success: false,
-                message: 'La contraseña actual y la nueva son requeridas'
-            });
-        }
-
-        // Usar el método de validación del modelo
+export const changePassword = [
+    validatePassword,
+    async (req, res, next) => {
         try {
-            User.validatePassword(newPassword);
+            const { id } = req.params;
+            const { currentPassword, newPassword } = req.body;
+
+            // Verificar que el ID existe
+            if (!id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'ID de usuario es requerido'
+                });
+            }
+
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'ID de usuario inválido'
+                });
+            }
+
+            if (!currentPassword) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'La contraseña actual es requerida'
+                });
+            }
+
+            const user = await User.findById(id);
+
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Usuario no encontrado'
+                });
+            }
+
+            // Verificar la contraseña actual
+            const isCurrentPasswordValid = await user.comparePassword(currentPassword);
+            
+            if (!isCurrentPasswordValid) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'La contraseña actual es incorrecta'
+                });
+            }
+
+            // Actualizar la contraseña (se hashea automáticamente)
+            user.password = newPassword;
+            await user.save();
+
+            res.status(200).json({
+                success: true,
+                message: 'Contraseña actualizada exitosamente'
+            });
         } catch (error) {
-            return res.status(400).json({
-                success: false,
-                message: error.message
-            });
+            next(error);
         }
-
-        const user = await User.findById(id);
-
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'Usuario no encontrado'
-            });
-        }
-
-        // Verificar la contraseña actual
-        const isCurrentPasswordValid = await user.comparePassword(currentPassword);
-        
-        if (!isCurrentPasswordValid) {
-            return res.status(400).json({
-                success: false,
-                message: 'La contraseña actual es incorrecta'
-            });
-        }
-
-        // Actualizar la contraseña (se hashea automáticamente)
-        user.password = newPassword;
-        await user.save();
-
-        res.status(200).json({
-            success: true,
-            message: 'Contraseña actualizada exitosamente'
-        });
-    } catch (error) {
-        next(error);
     }
-};
+];
 
 // Actualizar datos limitados del usuario (solo username para usuarios normales)
 export const updateUserSelf = async (req, res, next) => {

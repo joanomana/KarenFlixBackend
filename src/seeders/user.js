@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import mongoose from 'mongoose';
+import { seedData } from '../utils/seederUtils.js';
 
 // Datos de usuarios de prueba
 const usersData = [
@@ -32,33 +33,11 @@ const usersData = [
 // Función para crear usuarios de prueba
 export const seedUsers = async () => {
     try {
-        // Verificar si ya existen usuarios en la base de datos
-        const existingUsersCount = await User.countDocuments();
-        
-        if (existingUsersCount > 0) {
-            console.log(`ℹ️  Ya existen ${existingUsersCount} usuarios en la base de datos`);
-            return;
-        }
-        
         console.log('🔄 Procediendo con el seeding de usuarios...');
 
-        // Crear usuarios de prueba
-        for (const userData of usersData) {
-            const user = new User(userData);
-            await user.save();
-            console.log(`✅ Usuario creado: ${userData.username} (${userData.email})`);
-        }
+        await seedData(User, usersData, { email: true });
 
         console.log('🎉 Seeding de usuarios completado exitosamente');
-        console.log(`📊 Total usuarios creados: ${usersData.length}`);
-        
-        // Mostrar información de los usuarios creados
-        const createdUsers = await User.find().select('-password');
-        console.log('\n📋 Usuarios en la base de datos:');
-        createdUsers.forEach(user => {
-            console.log(`- ${user.username} (${user.email}) - Rol: ${user.role}`);
-        });
-        
     } catch (error) {
         console.error('❌ Error durante el seeding de usuarios:', error);
         throw error;
@@ -69,28 +48,14 @@ export const seedUsers = async () => {
 export const seedUsersForce = async () => {
     try {
         console.log('🔄 Forzando seeding de usuarios...');
-        
+
         // Limpiar la colección de usuarios existentes
         await User.deleteMany({});
         console.log('✅ Colección de usuarios limpiada');
 
-        // Crear usuarios de prueba
-        for (const userData of usersData) {
-            const user = new User(userData);
-            await user.save();
-            console.log(`✅ Usuario creado: ${userData.username} (${userData.email})`);
-        }
+        await seedData(User, usersData, { email: true });
 
-        console.log('🎉 Seeding forzado de usuarios completado exitosamente');
-        console.log(`📊 Total usuarios creados: ${usersData.length}`);
-        
-        // Mostrar información de los usuarios creados
-        const createdUsers = await User.find().select('-password');
-        console.log('\n📋 Usuarios en la base de datos:');
-        createdUsers.forEach(user => {
-            console.log(`- ${user.username} (${user.email}) - Rol: ${user.role}`);
-        });
-        
+        console.log('🎉 Seeding de usuarios forzado completado exitosamente');
     } catch (error) {
         console.error('❌ Error durante el seeding forzado de usuarios:', error);
         throw error;

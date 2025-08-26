@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import { asyncHandler } from '../middlewares/errorHandler.js';
 
 // Función auxiliar para generar JWT
 const generateToken = (userId) => {
@@ -28,106 +29,98 @@ const generateRefreshToken = (userId) => {
 };
 
 // Registro de usuario
-export const register = async (req, res, next) => {
-    try {
-        const { username, email, password, role } = req.body;
+export const register = asyncHandler(async (req, res) => {
+    const { username, email, password } = req.body;
 
-        // Verificar si el usuario ya existe
-        const existingUser = await User.findOne({
-            $or: [{ email }, { username }]
+    // Verificar si el usuario ya existe
+    const existingUser = await User.findOne({
+        $or: [{ email }, { username }]
+    });
+
+    if (existingUser) {
+        return res.status(409).json({
+            success: false,
+            message: 'El usuario o email ya existe'
         });
-
-        if (existingUser) {
-            return res.status(409).json({
-                success: false,
-                message: 'El usuario o email ya existe'
-            });
-        }
-
-        // Crear nuevo usuario
-        const user = new User({
-            username,
-            email,
-            password,
-            role: role || 'user'
-        });
-
-        await user.save();
-
-        // Generar tokens
-        const token = generateToken(user._id);
-        const refreshToken = generateRefreshToken(user._id);
-
-        res.status(201).json({
-            success: true,
-            message: 'Usuario registrado exitosamente',
-            data: {
-                user: {
-                    id: user._id,
-                    username: user.username,
-                    email: user.email,
-                    role: user.role,
-                    createdAt: user.createdAt
-                },
-                token,
-                refreshToken,
-                expiresIn: process.env.JWT_EXPIRES_IN || '7d'
-            }
-        });
-    } catch (error) {
-        next(error);
     }
-};
+
+    // Crear nuevo usuario
+    const user = new User({
+        username,
+        email,
+        password,
+        role: 'user'
+    });
+
+    await user.save();
+
+    // Generar tokens
+    const token = generateToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    res.status(201).json({
+        success: true,
+        message: 'Usuario registrado exitosamente',
+        data: {
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role,
+                createdAt: user.createdAt
+            },
+            token,
+            refreshToken,
+            expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+        }
+    });
+});
 
 // Login de usuario
-export const login = async (req, res, next) => {
-    try {
-        const { email, password } = req.body;
+export const login = asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
 
-        // Buscar usuario solo por email
-        const user = await User.findOne({ email });
+    // Buscar usuario solo por email
+    const user = await User.findOne({ email });
 
-        if (!user) {
-            return res.status(401).json({
-                success: false,
-                message: 'Credenciales inválidas'
-            });
-        }
-
-        // Verificar contraseña
-        const isPasswordValid = await user.comparePassword(password);
-
-        if (!isPasswordValid) {
-            return res.status(401).json({
-                success: false,
-                message: 'Credenciales inválidas'
-            });
-        }
-
-        // Generar tokens
-        const token = generateToken(user._id);
-        const refreshToken = generateRefreshToken(user._id);
-
-        res.status(200).json({
-            success: true,
-            message: 'Login exitoso',
-            data: {
-                user: {
-                    id: user._id,
-                    username: user.username,
-                    email: user.email,
-                    role: user.role,
-                    isAdmin: user.isAdmin()
-                },
-                token,
-                refreshToken,
-                expiresIn: process.env.JWT_EXPIRES_IN || '7d'
-            }
+    if (!user) {
+        return res.status(401).json({
+            success: false,
+            message: 'Credenciales inválidas'
         });
-    } catch (error) {
-        next(error);
     }
-};
+
+    // Verificar contraseña
+    const isPasswordValid = await user.comparePassword(password);
+
+    if (!isPasswordValid) {
+        return res.status(401).json({
+            success: false,
+            message: 'Credenciales inválidas'
+        });
+    }
+
+    // Generar tokens
+    const token = generateToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    res.status(200).json({
+        success: true,
+        message: 'Login exitoso',
+        data: {
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role,
+                isAdmin: user.isAdmin()
+            },
+            token,
+            refreshToken,
+            expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+        }
+    });
+});
 
 // Refresh token
 export const refreshToken = async (req, res, next) => {
@@ -195,7 +188,7 @@ export const refreshToken = async (req, res, next) => {
 // Obtener perfil del usuario autenticado
 export const getProfile = async (req, res, next) => {
     try {
-        const user = await User.findById(req.user.userId).select('-password');
+        const user = await User.findById(req.user._id).select('-password');
         
         if (!user) {
             return res.status(404).json({
@@ -223,52 +216,6 @@ export const getProfile = async (req, res, next) => {
     }
 };
 
-// Actualizar perfil del usuario autenticado
-export const updateProfile = async (req, res, next) => {
-    try {
-        const { username, email } = req.body;
-        const updates = {};
-
-        if (username) updates.username = username;
-        if (email) updates.email = email;
-
-        const user = await User.findByIdAndUpdate(
-            req.user.userId,
-            updates,
-            { new: true, runValidators: true }
-        ).select('-password');
-
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'Usuario no encontrado'
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: 'Perfil actualizado exitosamente',
-            data: {
-                user: {
-                    id: user._id,
-                    username: user.username,
-                    email: user.email,
-                    role: user.role,
-                    isAdmin: user.isAdmin(),
-                    updatedAt: user.updatedAt
-                }
-            }
-        });
-    } catch (error) {
-        if (error.code === 11000) {
-            return res.status(409).json({
-                success: false,
-                message: 'El username o email ya existe'
-            });
-        }
-        next(error);
-    }
-};
 
 // Logout (invalidar token - opcional, depende de la implementación del frontend)
 export const logout = async (req, res, next) => {
@@ -288,6 +235,5 @@ export default {
     login,
     refreshToken,
     getProfile,
-    updateProfile,
     logout
 };

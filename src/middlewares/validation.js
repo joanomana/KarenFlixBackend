@@ -147,3 +147,30 @@ export const validateMediaSuggestion = [
   }),
   handleValidationErrors
 ];
+
+// ===================== Media (Admin) =====================
+export const validateMediaCreateAdmin = [
+  body('title').trim().isLength({ min: 2, max: 200 }).withMessage('Título requerido (2-200)'),
+  body('type').isIn(['movie','anime','series']).withMessage('type debe ser movie|anime|series'),
+  body('description').trim().isLength({ min: 10 }).withMessage('Descripción mínima 10'),
+  body('year').isInt({ min: 1880, max: new Date().getFullYear() }).withMessage('Año inválido'),
+  body('category').custom((v) => {
+    if (typeof v === 'string') return v.trim().length > 0;
+    if (v && typeof v === 'object' && v.name) return String(v.name).trim().length > 0;
+    throw new Error('category requerida');
+  }),
+  handleValidationErrors
+];
+
+export const validateMediaUpdateAdmin = [
+  body('title').optional().trim().isLength({ min: 2, max: 200 }).withMessage('Título (2-200)'),
+  body('type').optional().isIn(['movie','anime','series']).withMessage('type debe ser movie|anime|series'),
+  body('description').optional().trim().isLength({ min: 10 }).withMessage('Descripción mínima 10'),
+  body('year').optional().isInt({ min: 1880, max: new Date().getFullYear() }).withMessage('Año inválido'),
+  body('category').optional().custom((v) => {
+    if (typeof v === 'string') return v.trim().length > 0;
+    if (v && typeof v === 'object' && v.name) return String(v.name).trim().length > 0;
+    throw new Error('category inválida');
+  }),
+  handleValidationErrors
+];

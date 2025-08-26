@@ -2,16 +2,11 @@ import User from '../models/User.js';
 
 export class UserService {
     
-    // Autenticar usuario por email/username y contraseña
-    static async authenticateUser(identifier, password) {
+    // Autenticar usuario por email y contraseña
+    static async authenticateUser(email, password) {
         try {
-            // Buscar por email o username
-            const user = await User.findOne({
-                $or: [
-                    { email: identifier },
-                    { username: identifier }
-                ]
-            });
+            // Buscar solo por email
+            const user = await User.findOne({ email });
 
             if (!user) {
                 return {

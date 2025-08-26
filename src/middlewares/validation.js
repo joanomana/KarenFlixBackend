@@ -52,10 +52,11 @@ export const validateUserRegistration = [
 
 // Validaciones para login
 export const validateUserLogin = [
-    body('identifier')
+    body('email')
         .trim()
         .notEmpty()
-        .withMessage('Email o nombre de usuario requerido'),
+        .isEmail()
+        .withMessage('Email válido requerido'),
     
     body('password')
         .notEmpty()

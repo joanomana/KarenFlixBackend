@@ -6,8 +6,7 @@ import { seedUsers } from './user.js';
  * Solo ejecuta si no existen datos previos
  */
 export const runAllSeeders = async () => {
-    
-    await seedMedia();
+
 try {
         console.log('🌱 Iniciando proceso de seeding...');
         
@@ -17,14 +16,13 @@ try {
                 name: 'Users',
                 seeder: seedUsers,
                 description: 'Crear usuarios de prueba'
+            },
+            {
+                name: 'Media',
+                seeder: seedMedia,
+                description: 'Crear medios de prueba'
             }
-            // {
-            //     name: 'Movies',
-            //     seeder: seedMovies,
-            //     description: 'Crear películas de prueba'
-            // }
         ];
-
         console.log(`📋 Seeders disponibles: ${seeders.length}`);
         
         // Ejecutar cada seeder

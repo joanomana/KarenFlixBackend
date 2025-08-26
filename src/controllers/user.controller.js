@@ -134,8 +134,6 @@ export const updateUser = async (req, res, next) => {
                 message: 'ID de usuario inválido'
             });
         }
-
-        // No permitir actualizar la contraseña a través de este endpoint
         if (updates.password) {
             delete updates.password;
         }

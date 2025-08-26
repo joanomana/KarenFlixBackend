@@ -82,15 +82,10 @@ export const register = async (req, res, next) => {
 // Login de usuario
 export const login = async (req, res, next) => {
     try {
-        const { identifier, password } = req.body;
+        const { email, password } = req.body;
 
-        // Buscar usuario por email o username
-        const user = await User.findOne({
-            $or: [
-                { email: identifier },
-                { username: identifier }
-            ]
-        });
+        // Buscar usuario solo por email
+        const user = await User.findOne({ email });
 
         if (!user) {
             return res.status(401).json({

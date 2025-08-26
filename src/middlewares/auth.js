@@ -25,12 +25,7 @@ export const authenticateToken = async (req, res, next) => {
             });
         }
 
-        req.user = {
-            userId: user._id,
-            username: user.username,
-            email: user.email,
-            roles: user.roles
-        };
+        req.user = { _id: user._id, username: user.username, email: user.email, roles: user.roles };
 
         next();
     } catch (error) {

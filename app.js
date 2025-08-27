@@ -59,7 +59,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/media', mediaRoutes);
-app.use("/api/vi/",reviewRoutes)
+app.use("/api/vi/reviews",reviewRoutes)
 
 
 // Configurar Swagger en /api/v1/docs

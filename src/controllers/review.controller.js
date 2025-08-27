@@ -8,17 +8,16 @@ export const createReview = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-    const mediaId = req.params.id;
-    const userId  = req.user?._id; // viene de authenticateToken
+    const { mediaId, title, comment, rating } = req.body;
+    const userId  = req.user?._id;
 
+    // Verificar media
     const media = await Media.findById(mediaId).lean();
     if (!media) return res.status(404).json({ message: 'Media no encontrada' });
 
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-      const { title, comment, rating } = req.body;
-
       const [review] = await Review.create([{
         mediaId, userId, title, comment, rating
       }], { session });

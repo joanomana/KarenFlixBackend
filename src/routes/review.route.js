@@ -5,7 +5,7 @@ import { createReview } from '../controllers/review.controller.js';
 
 const router = express.Router();
 
-// Crear reseña para un media específico
-router.post('/media/:id/reviews', authenticateToken, validateCreateReview, createReview);
+// RUTA ÚNICA DE REVIEWS 
+router.post('/', authenticateToken, validateCreateReview, createReview);
 
 export default router;

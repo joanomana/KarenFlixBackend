@@ -8,7 +8,6 @@ const ReviewSchema = new mongoose.Schema({
   rating:  { type: Number, required: true, min: 1, max: 10 }
 }, { timestamps: true });
 
-// Evita duplicados: 1 reseña por usuario por media
 ReviewSchema.index({ mediaId: 1, userId: 1 }, { unique: true });
 
 const Review = mongoose.model('Review', ReviewSchema);

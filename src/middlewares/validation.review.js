@@ -1,6 +1,8 @@
 import { body } from 'express-validator';
 
 export const validateCreateReview = [
+  body('mediaId')
+    .isMongoId().withMessage('mediaId debe ser un ObjectId válido'),
   body('title')
     .isString().withMessage('title debe ser string')
     .isLength({ min: 3, max: 120 }).withMessage('title 3–120 chars'),

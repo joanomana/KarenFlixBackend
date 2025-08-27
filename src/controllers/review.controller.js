@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Media from '../models/Media.js';
 import Review from '../models/Review.js';
+import ReviewReaction from '../models/ReviewReaction.js';
 import { validationResult } from 'express-validator';
 
 /**
@@ -198,6 +199,63 @@ export const deleteReview = async (req, res, next) => {
       session.endSession();
       throw err;
     }
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+export const reactionReview = async (req, res, next) => {
+  try {
+    const reviewId = String(req.params.id).trim();
+    const userId   = req.user?._id;
+    const { value } = req.body; // 1 = like, -1 = dislike
+
+    // Verificar reseña
+    const review = await Review.findById(reviewId);
+    if (!review) return res.status(404).json({ message: 'Reseña no encontrada' });
+    if (String(review.userId) === String(userId)) {
+      return res.status(403).json({ message: 'No puedes reaccionar a tu propia reseña' });
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+      const existing = await ReviewReaction.findOne({ reviewId, userId }).session(session);
+
+      if (!existing) {
+        // Crear reacción nueva
+        await ReviewReaction.create([{ reviewId, userId, value }], { session });
+        const inc = value === 1 ? { likesCount: 1 } : { dislikesCount: 1 };
+        await Review.updateOne({ _id: reviewId }, { $inc: inc }, { session });
+
+      } else if (existing.value !== value) {
+        // Cambiar de like <-> dislike
+        await ReviewReaction.updateOne({ _id: existing._id }, { value }, { session });
+        const ops = value === 1
+          ? { $inc: { likesCount: 1, dislikesCount: -1 } }
+          : { $inc: { likesCount: -1, dislikesCount: 1 } };
+        await Review.updateOne({ _id: reviewId }, ops, { session });
+      }
+      // Si ya existe y es el mismo valor, no hacer nada (idempotente)
+
+      await session.commitTransaction();
+      session.endSession();
+
+      const fresh = await Review.findById(reviewId).lean();
+      return res.status(200).json({
+        reviewId,
+        value,
+        likesCount: fresh?.likesCount ?? 0,
+        dislikesCount: fresh?.dislikesCount ?? 0
+      });
+
+    } catch (err) {
+      await session.abortTransaction();
+      session.endSession();
+      throw err;
+    }
+
   } catch (error) {
     next(error);
   }

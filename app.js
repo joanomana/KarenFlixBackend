@@ -15,21 +15,19 @@ import userRoutes from './src/routes/user.route.js';
 import mediaRoutes from './src/routes/media.route.js';
 
 // Configurar Swagger
-import swaggerSetup from './src/config/swagger.js';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './src/config/swagger.js';
 
 // Cargar variables de entorno
 dotenv.config();
 
 const app = express();
 
+// CORS
+app.use(cors());
+
 // Middlewares de seguridad
 app.use(helmet());
-
-// CORS
-app.use(cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-    credentials: true
-}));
 
 // Rate limiting
 app.use(generalLimiter);
@@ -54,13 +52,15 @@ app.get('/health', (_req, res) => {
     });
 });
 
+// Configurar Swagger en /api/v1/docs
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 // Rutas principales
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/media', mediaRoutes);
 
-// Configurar Swagger en /api/v1/docs
-swaggerSetup(app, '/api/v1/docs');
+
 
 // Ruta para manejar rutas no encontradas
 app.use('*', (req, res) => {

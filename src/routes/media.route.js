@@ -5,45 +5,316 @@ import { validateMediaSuggestion, validateMediaCreateAdmin, validateMediaUpdateA
 
 const router = express.Router();
 
-// Sugerencia de usuarios (requiere login)
+/**
+ * @swagger
+ * /media/suggest:
+ *   post:
+ *     summary: Sugerir un nuevo título (usuario autenticado)
+ *     description: Permite a los usuarios sugerir una nueva película, serie o anime. El estado inicial será "pending".
+ *     tags: [Media]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - type
+ *               - year
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 example: "Dune"
+ *               type:
+ *                 type: string
+ *                 example: "movie"
+ *               description:
+ *                 type: string
+ *                 example: "Película de ciencia ficción."
+ *               category:
+ *                 type: string
+ *                 example: "Ciencia Ficción"
+ *               year:
+ *                 type: integer
+ *                 example: 2021
+ *               imageUrl:
+ *                 type: string
+ *                 format: uri
+ *                 example: "https://ejemplo.com/dune.jpg"
+ *     responses:
+ *       201:
+ *         description: Sugerencia enviada exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Sugerencia enviada"
+ *                 media:
+ *                   $ref: '#/components/schemas/Media'
+ *       409:
+ *         description: Título duplicado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.post('/suggest', authenticateToken, validateMediaSuggestion, suggestMedia);
 
-// Crear un nuevo título (solo administradores)
-// Crea películas/series/anime directamente con estado "approved" //funciona
+/**
+ * @swagger
+ * /media:
+ *   post:
+ *     summary: Crear un nuevo título (solo administradores)
+ *     description: Permite a los administradores crear directamente un título aprobado.
+ *     tags: [Media]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Media'
+ *     responses:
+ *       201:
+ *         description: Título creado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 media:
+ *                   $ref: '#/components/schemas/Media'
+ *       409:
+ *         description: Título duplicado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.post('/', authenticateToken, requireAdmin, validateMediaCreateAdmin, createMediaAdmin);
 
 
-// Listar títulos (solo administradores)
-// Permite filtrar por status, type o búsqueda (ej. ?status=pending&type=movie&q=harry)
-// Todos los títulos (máx. 100):
-// http://localhost:4000/api/v1/media
+/**
+ * @swagger
+ * /media:
+ *   get:
+ *     summary: Listar títulos (solo administradores)
+ *     description: Permite listar títulos filtrando por status, type o búsqueda por título. Máximo 100 resultados.
+ *     tags: [Media]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, approved, rejected]
+ *         description: Filtrar por estado
+ *         example: "approved"
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *         description: Filtrar por tipo (movie, serie, anime)
+ *         example: "movie"
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         description: Búsqueda por título
+ *         example: "Dune"
+ *     responses:
+ *       200:
+ *         description: Lista de títulos obtenida exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 items:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Media'
+ */
+router.get('/', authenticateToken, requireAdmin, listMedia);
 
-// Solo pendientes:
-// http://localhost:4000/api/v1/media?status=pending
 
-// Solo películas aprobadas:
-// http://localhost:4000/api/v1/media?status=approved&type=movie
+/**
+ * @swagger
+ * /media/{id}:
+ *   put:
+ *     summary: Editar un título existente (solo administradores)
+ *     description: Actualiza los campos de un título por su ID.
+ *     tags: [Media]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID del título
+ *         example: "64e8b2f2c2a4e2b1d8f1a2c3"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Media'
+ *     responses:
+ *       200:
+ *         description: Título actualizado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Actualizado"
+ *                 media:
+ *                   $ref: '#/components/schemas/Media'
+ *       404:
+ *         description: Título no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.put('/:id', authenticateToken, requireAdmin, validateMediaUpdateAdmin, updateMedia);
 
-// Búsqueda por título (ej. “Dune”):
-// http://localhost:4000/api/v1/media?q=dune
-router.get('/', authenticateToken, requireAdmin, listMedia); //funciona
 
+/**
+ * @swagger
+ * /media/{id}:
+ *   delete:
+ *     summary: Eliminar un título existente (solo administradores)
+ *     description: Borra un título por su ID.
+ *     tags: [Media]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID del título
+ *         example: "64e8b2f2c2a4e2b1d8f1a2c3"
+ *     responses:
+ *       204:
+ *         description: Título eliminado exitosamente (sin contenido)
+ *       404:
+ *         description: Título no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.delete('/:id', authenticateToken, requireAdmin, deleteMedia);
 
-// Editar un título existente (solo administradores)
-// Actualiza campos como título, descripción, año, categoría, imagen, etc.
-router.put('/:id', authenticateToken, requireAdmin, validateMediaUpdateAdmin, updateMedia); //funciona
+/**
+ * @swagger
+ * /media/{id}/approve:
+ *   put:
+ *     summary: Aprobar una sugerencia pendiente (solo administradores)
+ *     description: Cambia el estado de un título a "approved" y guarda quién lo aprobó.
+ *     tags: [Media]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID del título
+ *         example: "64e8b2f2c2a4e2b1d8f1a2c3"
+ *     responses:
+ *       200:
+ *         description: Título aprobado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Aprobado"
+ *                 media:
+ *                   $ref: '#/components/schemas/Media'
+ *       404:
+ *         description: Título no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.put('/:id/approve', authenticateToken, requireAdmin, approveMedia);
 
-
-// Eliminar un título existente (solo administradores)
-// Borra un documento de la colección Media por su ID
-router.delete('/:id', authenticateToken, requireAdmin, deleteMedia); //funciona
-
-// Aprobar una sugerencia pendiente (solo administradores)
-// Cambia el estado de un título a "approved" y guarda quién lo aprobó
-router.put('/:id/approve', authenticateToken, requireAdmin, approveMedia); //funciona
-
-// Rechazar una sugerencia pendiente (solo administradores)
-// Cambia el estado de un título a "rejected" (puede opcionalmente registrar un motivo)
-router.put('/:id/reject', authenticateToken, requireAdmin, rejectMedia); //funciona
+/**
+ * @swagger
+ * /media/{id}/reject:
+ *   put:
+ *     summary: Rechazar una sugerencia pendiente (solo administradores)
+ *     description: Cambia el estado de un título a "rejected".
+ *     tags: [Media]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID del título
+ *         example: "64e8b2f2c2a4e2b1d8f1a2c3"
+ *     responses:
+ *       200:
+ *         description: Título rechazado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Rechazado"
+ *                 media:
+ *                   $ref: '#/components/schemas/Media'
+ *       404:
+ *         description: Título no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.put('/:id/reject', authenticateToken, requireAdmin, rejectMedia);
 
 export default router;

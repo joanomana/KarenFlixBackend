@@ -13,6 +13,7 @@ import passport from './src/config/passport.js';
 import authRoutes from './src/routes/auth.route.js';
 import userRoutes from './src/routes/user.route.js';
 import mediaRoutes from './src/routes/media.route.js';
+import reviewRoutes from "./src/routes/review.route.js"
 
 // Configurar Swagger
 import swaggerSetup from './src/config/swagger.js';
@@ -58,6 +59,8 @@ app.get('/health', (_req, res) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/media', mediaRoutes);
+app.use("/api/vi/",reviewRoutes)
+
 
 // Configurar Swagger en /api/v1/docs
 swaggerSetup(app, '/api/v1/docs');

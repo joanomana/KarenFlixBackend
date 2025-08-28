@@ -13,6 +13,7 @@ import passport from './src/config/passport.js';
 import authRoutes from './src/routes/auth.route.js';
 import userRoutes from './src/routes/user.route.js';
 import mediaRoutes from './src/routes/media.route.js';
+import reviewRoutes from "./src/routes/review.route.js"
 
 // Configurar Swagger
 import swaggerUi from 'swagger-ui-express';
@@ -59,6 +60,8 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/media', mediaRoutes);
+app.use("/api/v1/reviews",reviewRoutes)
+
 
 
 

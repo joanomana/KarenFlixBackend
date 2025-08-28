@@ -4,6 +4,7 @@ import User from '../models/User.js';
 // Middleware para verificar JWT token
 export const authenticateToken = async (req, res, next) => {
     try {
+        //console.log("el error esta depues de auteicificar el token")
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 

@@ -7,7 +7,7 @@ PORT=4001
 JWT_SECRET=tu_clave_secreta_jwt_muy_segura_aqui_123456789
 
 # Base de datos MongoDB
-# MONGODB_URI=
+MONGODB_URI=mongodb+srv://davstudios95:A05162738a%2A@clusterpruebas.c61iwun.mongodb.net/
 # Crear .env.example y agregar la uri, por defecto localhost:27017
 
 # HOST

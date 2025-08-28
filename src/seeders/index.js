@@ -1,6 +1,6 @@
 import { seedMedia } from './media.js';
 import { seedUsers } from './user.js';
-
+import { seedReviews } from './review.js'; 
 /**
  * Ejecuta todos los seeders de la aplicación
  * Solo ejecuta si no existen datos previos
@@ -21,6 +21,11 @@ try {
                 name: 'Media',
                 seeder: seedMedia,
                 description: 'Crear medios de prueba'
+            },
+            {
+                name: 'Reviews',
+                seeder: seedReviews,
+                description: 'Crear reviews de prueba'
             }
         ];
         console.log(`📋 Seeders disponibles: ${seeders.length}`);

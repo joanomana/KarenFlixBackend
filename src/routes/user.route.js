@@ -7,10 +7,10 @@ import {
     deleteUser,
     changePassword
 } from '../controllers/user.controller.js';
-import { 
-    authenticateToken, 
-    requireAdmin, 
-    requireOwnershipOrAdmin 
+import {
+    authenticateToken,
+    requireAdmin,
+    requireOwnershipOrAdmin
 } from '../middlewares/auth.js';
 import {
     validateUserRegistration,
@@ -677,19 +677,326 @@ const router = express.Router();
 // Aplicar autenticación a todas las rutas
 router.use(authenticateToken);
 
-// Rutas CRUD para usuarios (solo admin puede ver todos y crear usuarios)
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     summary: Obtener todos los usuarios (solo admin)
+ *     description: Retorna una lista paginada de todos los usuarios registrados. Solo administradores pueden acceder.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Número de página
+ *         example: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *         description: Número de usuarios por página
+ *         example: 10
+ *       - in: query
+ *         name: role
+ *         schema:
+ *           type: string
+ *           enum: [user, admin]
+ *         description: Filtrar por rol
+ *         example: "user"
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Buscar por username o email
+ *         example: "john"
+ *     responses:
+ *       200:
+ *         description: Lista de usuarios obtenida exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Usuarios obtenidos exitosamente"
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/User'
+ */
 router.get('/', requireAdmin, getAllUsers);
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   get:
+ *     summary: Obtener un usuario por ID
+ *     description: Retorna los datos de un usuario específico. Los usuarios solo pueden ver su propio perfil, los administradores pueden ver cualquier perfil.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: "^[0-9a-fA-F]{24}$"
+ *         description: ID válido de MongoDB del usuario
+ *         example: "60d5ecb74b14b84f17c7b8a1"
+ *     responses:
+ *       200:
+ *         description: Usuario obtenido exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       404:
+ *         description: Usuario no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.get('/:id', requireOwnershipOrAdmin, getUserById);
 
-// Actualización completa (solo admin)
+/**
+ * @swagger
+ * /users/{id}:
+ *   put:
+ *     summary: Actualizar un usuario (solo admin)
+ *     description: Permite a un administrador actualizar cualquier campo de un usuario, incluyendo role y password
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: "^[0-9a-fA-F]{24}$"
+ *         description: ID válido de MongoDB del usuario
+ *         example: "60d5ecb74b14b84f17c7b8a1"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: "nuevo_usuario"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "nuevo@email.com"
+ *               role:
+ *                 type: string
+ *                 enum: [user, admin]
+ *                 example: "admin"
+ *               password:
+ *                 type: string
+ *                 example: "NewAdminPassword123"
+ *     responses:
+ *       200:
+ *         description: Usuario actualizado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Usuario actualizado exitosamente"
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       404:
+ *         description: Usuario no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.put('/:id', requireAdmin, validateUserUpdate, updateUser);
 
-// Actualización limitada para usuarios normales (solo username)
+/**
+ * @swagger
+ * /users/{id}/update-profile:
+ *   patch:
+ *     summary: Actualizar el perfil del usuario autenticado
+ *     description: Permite a un usuario editar su propio username.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: "^[0-9a-fA-F]{24}$"
+ *         description: ID válido de MongoDB del usuario
+ *         example: "60d5ecb74b14b84f17c7b8a1"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: "nuevo_nombre_usuario"
+ *     responses:
+ *       200:
+ *         description: Perfil actualizado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Perfil actualizado exitosamente"
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       404:
+ *         description: Usuario no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.patch('/:id/update-profile', authenticateToken, validateUserSelfUpdate, updateUserSelf);
 
+/**
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     summary: Eliminar un usuario (solo admin)
+ *     description: Permite a un administrador eliminar un usuario por su ID.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: "^[0-9a-fA-F]{24}$"
+ *         description: ID válido de MongoDB del usuario
+ *         example: "60d5ecb74b14b84f17c7b8a1"
+ *     responses:
+ *       200:
+ *         description: Usuario eliminado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Usuario eliminado exitosamente"
+ *       404:
+ *         description: Usuario no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.delete('/:id', requireAdmin, deleteUser);
 
-// Ruta específica para cambiar contraseña (solo el propio usuario o admin)
+/**
+ * @swagger
+ * /users/{id}/change-password:
+ *   patch:
+ *     summary: Cambiar contraseña (usuario o admin)
+ *     description: Permite a un usuario cambiar su propia contraseña, o a un admin cambiar la de cualquier usuario.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: "^[0-9a-fA-F]{24}$"
+ *         description: ID válido de MongoDB del usuario
+ *         example: "60d5ecb74b14b84f17c7b8a1"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *                 example: "OldPassword123"
+ *               newPassword:
+ *                 type: string
+ *                 example: "NewPassword123"
+ *     responses:
+ *       200:
+ *         description: Contraseña actualizada exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Contraseña actualizada exitosamente"
+ *       400:
+ *         description: Datos de entrada inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Usuario no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.patch('/:id/change-password', requireOwnershipOrAdmin, validatePasswordChange, changePassword);
 
 export default router;

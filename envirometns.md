@@ -1,7 +1,7 @@
 # Variables de entorno para KarenFlixBackend
 
 # Puerto del servidor
-PORT=4000
+PORT=4001
 
 # JWT Secret (cambiar por una clave más segura en producción)
 JWT_SECRET=tu_clave_secreta_jwt_muy_segura_aqui_123456789
@@ -10,7 +10,9 @@ JWT_SECRET=tu_clave_secreta_jwt_muy_segura_aqui_123456789
 MONGODB_URI=mongodb+srv://davstudios95:A05162738a%2A@clusterpruebas.c61iwun.mongodb.net/
 # Crear .env.example y agregar la uri, por defecto localhost:27017
 
-
+# HOST
+HOST= 
+## por defecto localhost
 # CORS
 CORS_ORIGIN=http://localhost:3000
 

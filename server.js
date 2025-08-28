@@ -4,12 +4,12 @@ import app from './app.js';
 import { connectDB } from './src/config/db.js';
 import { runAllSeeders } from './src/seeders/index.js';
 
-const PORT = Number(process.env.PORT || 4000);
-const HOST = 'localhost';
+const PORT = Number(process.env.PORT || 4001);
+const HOST = '0.0.0.0';
 
 async function start() {
-    await connectDB();   
-    await runAllSeeders();    
+    await connectDB();
+    await runAllSeeders();
 
     const server = http.createServer(app);
     server.listen(PORT, HOST, () => {
@@ -27,9 +27,9 @@ async function start() {
     };
     process.once('SIGINT', () => shutdown('SIGINT'));
     process.once('SIGTERM', () => shutdown('SIGTERM'));
-    }
+}
 
-    start().catch((err) => {
+start().catch((err) => {
     console.error('Fallo al iniciar:', err);
     process.exit(1);
 });

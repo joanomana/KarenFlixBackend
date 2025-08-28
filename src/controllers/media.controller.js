@@ -160,3 +160,131 @@ export const listMedia = async (req, res, next) => {
     return res.status(200).json({ success: true, items });
   } catch (err) { next(err); }
 };
+
+
+// ====== Public preview handlers (RF15 & RF16) ======
+
+// Helper: pagination from query
+function getPagination(query) {
+  const page = Math.max(1, parseInt(query.page || '1', 10));
+  const limit = Math.min(50, Math.max(1, parseInt(query.limit || '12', 10)));
+  const skip = (page - 1) * limit;
+  return { page, limit, skip };
+}
+
+// GET /api/v1/media/public
+export const listMediaPublic = async (req, res, next) => {
+  try {
+    const { page, limit, skip } = getPagination(req.query);
+    const { q, type, sort } = req.query;
+    const filter = { status: 'approved' };
+    if (type) filter.type = type;
+    if (q) filter.title_lc = new RegExp(String(q).trim().toLowerCase(), 'i');
+
+    // Default sort: newest
+    const sortObj = {};
+    if (sort) {
+      // allow limited fields for safety
+      const allowed = new Set(['-createdAt','createdAt','-metrics.ratingAvg','metrics.ratingAvg','-metrics.weightedScore','metrics.weightedScore','-year','year']);
+      if (allowed.has(sort)) {
+        const dir = sort.startsWith('-') ? -1 : 1;
+        const key = sort.replace(/^-/, '');
+        sortObj[key] = dir;
+      }
+    }
+    if (Object.keys(sortObj).length === 0) sortObj.createdAt = -1;
+
+    const [items, total] = await Promise.all([
+      Media.find(filter)
+        .sort(sortObj)
+        .skip(skip)
+        .limit(limit)
+        .select('_id title type imageUrl year category metrics.ratingAvg metrics.ratingCount metrics.weightedScore slug'),
+      Media.countDocuments(filter)
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      items, page, limit, total,
+      hasNext: page * limit < total
+    });
+  } catch (err) { next(err); }
+};
+
+// GET /api/v1/media/ranking
+export const listMediaRanking = async (req, res, next) => {
+  try {
+    const { page, limit, skip } = getPagination(req.query);
+    const filter = { status: 'approved' };
+    const [items, total] = await Promise.all([
+      Media.find(filter)
+        .sort({ 'metrics.weightedScore': -1, 'metrics.ratingCount': -1 })
+        .skip(skip)
+        .limit(limit)
+        .select('_id title type imageUrl year category metrics.ratingAvg metrics.ratingCount metrics.weightedScore slug'),
+      Media.countDocuments(filter)
+    ]);
+    return res.status(200).json({ success: true, items, page, limit, total, hasNext: page*limit < total });
+  } catch (err) { next(err); }
+};
+
+// GET /api/v1/media/popular
+export const listMediaPopular = async (req, res, next) => {
+  try {
+    const { page, limit, skip } = getPagination(req.query);
+    const filter = { status: 'approved' };
+    // Popularidad sencilla: ratingCount desc + desempate por weightedScore
+    const [items, total] = await Promise.all([
+      Media.find(filter)
+        .sort({ 'metrics.ratingCount': -1, 'metrics.weightedScore': -1 })
+        .skip(skip)
+        .limit(limit)
+        .select('_id title type imageUrl year category metrics.ratingAvg metrics.ratingCount metrics.weightedScore slug'),
+      Media.countDocuments(filter)
+    ]);
+    return res.status(200).json({ success: true, items, page, limit, total, hasNext: page*limit < total });
+  } catch (err) { next(err); }
+};
+
+// GET /api/v1/media/category/:slug
+export const listMediaByCategory = async (req, res, next) => {
+  try {
+    const { page, limit, skip } = getPagination(req.query);
+    const { slug } = req.params;
+    const { type, sort } = req.query;
+
+    // Build filter: try match by category.slug if exists OR fallback to name (de-slugified)
+    const filter = { status: 'approved' };
+    if (type) filter.type = type;
+
+    const deSlug = String(slug || '').replace(/-/g, ' ').trim();
+    filter.$or = [
+      { 'category.slug': slug },
+      { 'category.name': new RegExp(`^${deSlug}$`, 'i') }
+    ];
+
+    const sortObj = {};
+    if (sort) {
+      const allowed = new Set(['-createdAt','createdAt','-metrics.ratingAvg','metrics.ratingAvg','-metrics.weightedScore','metrics.weightedScore','-year','year']);
+      if (allowed.has(sort)) {
+        const dir = sort.startsWith('-') ? -1 : 1;
+        const key = sort.replace(/^-/, '');
+        sortObj[key] = dir;
+      }
+    }
+    if (Object.keys(sortObj).length === 0) sortObj['metrics.weightedScore'] = -1;
+
+    const [items, total] = await Promise.all([
+      Media.find(filter)
+        .sort(sortObj)
+        .skip(skip)
+        .limit(limit)
+        .select('_id title type imageUrl year category metrics.ratingAvg metrics.ratingCount metrics.weightedScore slug'),
+      Media.countDocuments({ status: 'approved' }) // or count with same filter? Usually same filter.
+    ]);
+    // Using same filter for total:
+    const total2 = await Media.countDocuments(filter);
+
+    return res.status(200).json({ success: true, items, page, limit, total: total2, hasNext: page*limit < total2 });
+  } catch (err) { next(err); }
+};

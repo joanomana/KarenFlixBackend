@@ -2,6 +2,7 @@ import express from 'express';
 import { suggestMedia, createMediaAdmin, approveMedia, rejectMedia, updateMedia, deleteMedia, listMedia } from '../controllers/media.controller.js';
 import { authenticateToken, requireAdmin } from '../middlewares/auth.js';
 import { validateMediaSuggestion, validateMediaCreateAdmin, validateMediaUpdateAdmin } from '../middlewares/validation.js';
+import { listMediaPublic, listMediaRanking, listMediaPopular, listMediaByCategory } from '../controllers/media.controller.js';
 
 const router = express.Router();
 
@@ -45,5 +46,17 @@ router.put('/:id/approve', authenticateToken, requireAdmin, approveMedia); //fun
 // Rechazar una sugerencia pendiente (solo administradores)
 // Cambia el estado de un título a "rejected" (puede opcionalmente registrar un motivo)
 router.put('/:id/reject', authenticateToken, requireAdmin, rejectMedia); //funciona
+
+
+// Public preview endpoints (approved only)
+// GET /api/v1/media/public?type=movie&q=dark&page=1&limit=12&sort=-metrics.weightedScore
+// GET /api/v1/media/ranking?page=1&limit=12
+// GET /api/v1/media/popular?page=1&limit=12
+// GET /api/v1/media/category/ciencia-ficcion?page=1&limit=12&sort=-year
+
+router.get('/public', listMediaPublic);
+router.get('/ranking', listMediaRanking);
+router.get('/popular', listMediaPopular);
+router.get('/category/:slug', listMediaByCategory);
 
 export default router;

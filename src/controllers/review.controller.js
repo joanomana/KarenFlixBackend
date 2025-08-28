@@ -5,6 +5,31 @@ import ReviewReaction from '../models/ReviewReaction.js';
 import { validationResult } from 'express-validator';
 
 /**
+ * (Opcional) Actualiza weightedScore del Media en base a métricas actuales.
+ * Ajusta la fórmula a tu RF12 si ya la tienes definida.
+ */
+async function updateWeightedScore(mediaId, session) {
+  try {
+    const media = await Media.findById(mediaId).lean().session(session);
+    if (!media) return;
+
+    const R = media.metrics?.ratingAvg ?? 0;
+    const v = media.metrics?.ratingCount ?? 0;
+    const C = 6;   // promedio global aprox, ajustar
+    const m = 50;  // mínimo de votos para estabilizar, ajustar
+
+    const bayes = (v / (v + m)) * R + (m / (v + m)) * C;
+    await Media.updateOne(
+      { _id: mediaId },
+      { $set: { 'metrics.weightedScore': bayes } },
+      { session }
+    );
+  } catch (_) {
+    // evitar romper flujo si no existe metrics
+  }
+}
+
+/**
  * Crea una reseña y actualiza métricas del media.
  * POST /api/v1/reviews
  */
@@ -47,6 +72,8 @@ export const createReview = async (req, res, next) => {
         { session }
       );
 
+      await updateWeightedScore(mediaId, session);
+
       await session.commitTransaction();
       session.endSession();
 
@@ -73,7 +100,7 @@ export const updateReview = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() });
 
-    const reviewId = req.params.id;
+    const reviewId = String(req.params.id).trim();
     const userId   = req.user?._id;
     const { title, comment, rating } = req.body;
 
@@ -86,7 +113,6 @@ export const updateReview = async (req, res, next) => {
     const oldRating = review.rating;
     const ratingChanged = typeof rating === 'number' && Number.isFinite(rating) && rating !== oldRating;
 
-    // Transacción para mantener consistencia
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
@@ -96,7 +122,6 @@ export const updateReview = async (req, res, next) => {
       await review.save({ session });
 
       if (ratingChanged) {
-        // newAvg = (oldAvg*count - oldRating + newRating) / count
         const newRating = rating;
         await Media.updateOne(
           { _id: review.mediaId },
@@ -122,11 +147,11 @@ export const updateReview = async (req, res, next) => {
           ],
           { session }
         );
+        await updateWeightedScore(review.mediaId, session);
       }
 
       await session.commitTransaction();
       session.endSession();
-
       return res.status(200).json(review);
     } catch (err) {
       await session.abortTransaction();
@@ -144,7 +169,7 @@ export const updateReview = async (req, res, next) => {
  */
 export const deleteReview = async (req, res, next) => {
   try {
-    const reviewId = req.params.id;
+    const reviewId = String(req.params.id).trim();
     const userId   = req.user?._id;
 
     const review = await Review.findById(reviewId);
@@ -158,12 +183,8 @@ export const deleteReview = async (req, res, next) => {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-      // Eliminar reseña
       await Review.deleteOne({ _id: reviewId }, { session });
 
-      // Ajustar métricas:
-      // newCount = oldCount - 1
-      // newAvg = (oldAvg*oldCount - oldRating) / newCount   (si newCount > 0; si 0 -> 0)
       await Media.updateOne(
         { _id: review.mediaId },
         [
@@ -190,9 +211,10 @@ export const deleteReview = async (req, res, next) => {
         { session }
       );
 
+      await updateWeightedScore(review.mediaId, session);
+
       await session.commitTransaction();
       session.endSession();
-
       return res.status(204).send();
     } catch (err) {
       await session.abortTransaction();
@@ -204,14 +226,21 @@ export const deleteReview = async (req, res, next) => {
   }
 };
 
-
+/**
+ * Reaccionar (like/dislike) a una reseña de otro usuario.
+ * PUT /api/v1/reviews/:id/reaction
+ * Body: { value: 1 | -1 }
+ */
 export const reactionReview = async (req, res, next) => {
   try {
     const reviewId = String(req.params.id).trim();
     const userId   = req.user?._id;
-    const { value } = req.body; // 1 = like, -1 = dislike
+    const { value } = req.body; // 1 like, -1 dislike
 
-    // Verificar reseña
+    if (![1, -1].includes(value)) {
+      return res.status(422).json({ message: 'value debe ser 1 o -1' });
+    }
+
     const review = await Review.findById(reviewId);
     if (!review) return res.status(404).json({ message: 'Reseña no encontrada' });
     if (String(review.userId) === String(userId)) {
@@ -224,20 +253,20 @@ export const reactionReview = async (req, res, next) => {
       const existing = await ReviewReaction.findOne({ reviewId, userId }).session(session);
 
       if (!existing) {
-        // Crear reacción nueva
         await ReviewReaction.create([{ reviewId, userId, value }], { session });
         const inc = value === 1 ? { likesCount: 1 } : { dislikesCount: 1 };
         await Review.updateOne({ _id: reviewId }, { $inc: inc }, { session });
 
       } else if (existing.value !== value) {
-        // Cambiar de like <-> dislike
         await ReviewReaction.updateOne({ _id: existing._id }, { value }, { session });
         const ops = value === 1
           ? { $inc: { likesCount: 1, dislikesCount: -1 } }
           : { $inc: { likesCount: -1, dislikesCount: 1 } };
         await Review.updateOne({ _id: reviewId }, ops, { session });
       }
-      // Si ya existe y es el mismo valor, no hacer nada (idempotente)
+      // Si ya existe con el mismo valor, idempotente: no cambia contadores
+
+      await updateWeightedScore(review.mediaId, session);
 
       await session.commitTransaction();
       session.endSession();
@@ -253,9 +282,11 @@ export const reactionReview = async (req, res, next) => {
     } catch (err) {
       await session.abortTransaction();
       session.endSession();
+      if (err?.code === 11000) {
+        return res.status(409).json({ message: 'Conflicto de reacción' });
+      }
       throw err;
     }
-
   } catch (error) {
     next(error);
   }

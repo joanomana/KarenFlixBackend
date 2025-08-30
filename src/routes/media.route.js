@@ -326,6 +326,7 @@ router.put('/:id/reject', authenticateToken, requireAdmin, rejectMedia);
 // GET /api/v1/media/category/ciencia-ficcion?page=1&limit=12&sort=-year
 
 router.get('/public', listMediaPublic);
+router.get('/public/:idOrSlug', getMediaPublicByIdOrSlug);
 router.get('/ranking', listMediaRanking);
 router.get('/popular', listMediaPopular);
 router.get('/category/:slug', listMediaByCategory);

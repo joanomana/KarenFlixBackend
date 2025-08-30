@@ -291,3 +291,27 @@ export const reactionReview = async (req, res, next) => {
     next(error);
   }
 };
+
+
+// Public list of reviews (optionally filtered by mediaId). No auth required.
+export const listReviewsPublic = async (req, res, next) => {
+  try {
+    const { mediaId, page = 1, limit = 50 } = req.query;
+    const filter = mediaId ? { mediaId } : {};
+    const p = Math.max(parseInt(page) || 1, 1);
+    const l = Math.min(Math.max(parseInt(limit) || 50, 1), 200);
+    const skip = (p - 1) * l;
+
+    const [items, total] = await Promise.all([
+      Review.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(l)
+        .populate('userId', 'name email')
+        .lean(),
+      Review.countDocuments(filter)
+    ]);
+
+    return res.status(200).json({ success: true, items, page: p, limit: l, total, hasNext: p*l < total });
+  } catch (err) { next(err); }
+};

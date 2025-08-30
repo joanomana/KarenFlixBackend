@@ -22,11 +22,11 @@ try {
                 seeder: seedMedia,
                 description: 'Crear medios de prueba'
             },
-            {
-                name: 'Reviews',
-                seeder: seedReviews,
-                description: 'Crear reviews de prueba'
-            }
+            // {
+            //     name: 'Reviews',
+            //     seeder: seedReviews,
+            //     description: 'Crear reviews de prueba'
+            // }
         ];
         console.log(`📋 Seeders disponibles: ${seeders.length}`);
         

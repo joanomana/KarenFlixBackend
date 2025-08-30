@@ -2,7 +2,7 @@ import express from 'express';
 import { suggestMedia, createMediaAdmin, approveMedia, rejectMedia, updateMedia, deleteMedia, listMedia } from '../controllers/media.controller.js';
 import { authenticateToken, requireAdmin } from '../middlewares/auth.js';
 import { validateMediaSuggestion, validateMediaCreateAdmin, validateMediaUpdateAdmin } from '../middlewares/validation.js';
-import { listMediaPublic, listMediaRanking, listMediaPopular, listMediaByCategory } from '../controllers/media.controller.js';
+import { listMediaPublic, listMediaRanking, listMediaPopular, listMediaByCategory,getMediaPublicByIdOrSlug } from '../controllers/media.controller.js';
 
 const router = express.Router();
 

@@ -7,9 +7,13 @@ import {
     createReview,
     updateReview,
     deleteReview,
-    reactionReview } from '../controllers/review.controller.js';
+    reactionReview, listReviewsPublic } from '../controllers/review.controller.js';
 
 const router = express.Router();
+
+// Public: list all reviews (optionally filter by mediaId)
+
+router.get('/', listReviewsPublic);
 
 // RUTA ÚNICA DE REVIEWS 
 router.post('/', authenticateToken, validateCreateReview, createReview);

@@ -288,3 +288,27 @@ export const listMediaByCategory = async (req, res, next) => {
     return res.status(200).json({ success: true, items, page, limit, total: total2, hasNext: page*limit < total2 });
   } catch (err) { next(err); }
 };
+
+
+// ---- Public detail endpoint: get one media by id or slug + its reviews ----
+import mongoose from 'mongoose';
+import Review from '../models/Review.js';
+
+export const getMediaPublicByIdOrSlug = async (req, res, next) => {
+  try {
+    const { idOrSlug } = req.params;
+    const isId = mongoose.isValidObjectId(idOrSlug);
+    const filter = { status: 'approved', ...(isId ? { _id: idOrSlug } : { slug: idOrSlug }) };
+
+    const media = await Media.findOne(filter).lean();
+    if (!media) return res.status(404).json({ message: 'Media not found' });
+
+    // Fetch reviews for this media, most recent first, with user basic info
+    const reviews = await Review.find({ mediaId: media._id })
+      .sort({ createdAt: -1 })
+      .populate('userId', 'name email')
+      .lean();
+
+    return res.status(200).json({ success: true, media, reviews });
+  } catch (err) { next(err); }
+};

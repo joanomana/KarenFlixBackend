@@ -2,7 +2,7 @@ import express from 'express';
 import { suggestMedia, createMediaAdmin, approveMedia, rejectMedia, updateMedia, deleteMedia, listMedia } from '../controllers/media.controller.js';
 import { authenticateToken, requireAdmin } from '../middlewares/auth.js';
 import { validateMediaSuggestion, validateMediaCreateAdmin, validateMediaUpdateAdmin } from '../middlewares/validation.js';
-import { listMediaPublic, listMediaRanking, listMediaPopular, listMediaByCategory } from '../controllers/media.controller.js';
+import { listMediaPublic, listMediaRanking, listMediaPopular, listMediaByCategory,getMediaPublicByIdOrSlug } from '../controllers/media.controller.js';
 
 const router = express.Router();
 
@@ -326,6 +326,7 @@ router.put('/:id/reject', authenticateToken, requireAdmin, rejectMedia);
 // GET /api/v1/media/category/ciencia-ficcion?page=1&limit=12&sort=-year
 
 router.get('/public', listMediaPublic);
+router.get('/public/:idOrSlug', getMediaPublicByIdOrSlug);
 router.get('/ranking', listMediaRanking);
 router.get('/popular', listMediaPopular);
 router.get('/category/:slug', listMediaByCategory);

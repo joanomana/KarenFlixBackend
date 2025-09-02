@@ -1,13 +1,15 @@
 import express from 'express';
 import { authenticateToken } from '../middlewares/auth.js';
-import { validateCreateReview,
-         validateUpdateReview,
-         } from '../middlewares/validation.review.js';
-import { 
+import {
+    validateCreateReview,
+    validateUpdateReview,
+} from '../middlewares/validation.review.js';
+import {
     createReview,
     updateReview,
     deleteReview,
-    reactionReview, listReviewsPublic } from '../controllers/review.controller.js';
+    reactionReview, listReviewsPublic
+} from '../controllers/review.controller.js';
 
 const router = express.Router();
 

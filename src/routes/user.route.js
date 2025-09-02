@@ -18,6 +18,7 @@ import {
     validateUserSelfUpdate,
     validatePasswordChange
 } from '../middlewares/validation.js';
+import { passwordLimiter } from '../middlewares/rateLimiter.js';
 
 const router = express.Router();
 
@@ -997,6 +998,6 @@ router.delete('/:id', requireAdmin, deleteUser);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.patch('/:id/change-password', requireOwnershipOrAdmin, validatePasswordChange, changePassword);
+router.patch('/:id/change-password', passwordLimiter, requireOwnershipOrAdmin, validatePasswordChange, changePassword);
 
 export default router;

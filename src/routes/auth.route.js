@@ -12,6 +12,10 @@ import {
     validateUserLogin,
     validateUserUpdate
 } from '../middlewares/validation.js';
+import {
+    authLimiter,
+    registerLimiter
+} from '../middlewares/rateLimiter.js';
 
 const router = express.Router();
 
@@ -448,7 +452,7 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/register', validateUserRegistration, register);
+router.post('/register', registerLimiter, validateUserRegistration, register);
 
 /**
  * @swagger
@@ -488,7 +492,7 @@ router.post('/register', validateUserRegistration, register);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/login', validateUserLogin, login);
+router.post('/login', authLimiter, validateUserLogin, login);
 
 /**
  * @swagger
@@ -523,7 +527,7 @@ router.post('/login', validateUserLogin, login);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/refresh-token', refreshToken);
+router.post('/refresh-token', authLimiter, refreshToken);
 
 // Rutas protegidas (requieren autenticación)
 router.use(authenticateToken); // Aplicar middleware de autenticación a todas las rutas siguientes

@@ -621,6 +621,7 @@ CORS_ORIGIN=https://karenflix.com
 - 📖 **API Base URL:** `http://localhost:4000/api/v1`
 - 🏥 **Health Check:** `http://localhost:4000/health`
 - 📊 **Swagger Docs:** `http://localhost:4000/api/v1/docs`
+- 📊 **Docs:** `https://drive.google.com/drive/folders/1Aq-BI09Flr5jnBQ97J4-VP7qCPq3L7sI?usp=sharing)`
 
 ---
 

@@ -4,6 +4,11 @@
 
 **KarenFlix Backend** es una API REST completa para un sistema de reseñas y rankings de películas, animes y series. Diseñado para la comunidad geek, permite a los usuarios descubrir, reseñar y rankear contenido audiovisual con un sistema robusto de autenticación y autorización.
 
+## Autores
+
+- Joan Sebastian Omaña Suarez
+- David Adolfo Gomez Uribe
+
 ## ✨ Características Principales
 
 - 🔐 **Autenticación JWT** con refresh tokens
@@ -21,7 +26,6 @@
 - **Runtime:** Node.js (ES Modules)
 - **Framework:** Express.js
 - **Base de datos:** MongoDB (conexión nativa)
-- **ODM:** Mongoose para modelado de datos
 
 ### **Autenticación & Seguridad**
 - **JWT:** jsonwebtoken para tokens de acceso
@@ -561,7 +565,66 @@ CORS_ORIGIN=https://karenflix.com
 - ✅ **Documentación** en cada función
 - ✅ **Nombres descriptivos** para variables y funciones
 
-## 📞 Soporte y Contacto
+### **🏗️ Principios SOLID Implementados**
+
+#### **📌 Single Responsibility Principle (SRP)**
+- **Controladores:** Cada controlador tiene una única responsabilidad
+  - `auth.controller.js` → Solo maneja autenticación
+  - `user.controller.js` → Solo maneja gestión de usuarios
+  - `media.controller.js` → Solo maneja contenido multimedia
+- **Middlewares especializados:**
+  - `auth.js` → Solo autenticación y autorización
+  - `validation.js` → Solo validaciones de entrada
+  - `rateLimiter.js` → Solo limitación de velocidad
+  - `errorHandler.js` → Solo manejo de errores
+- **Servicios:** Cada servicio encapsula lógica específica de dominio
+  - `user.service.js` → Lógica de negocio de usuarios
+  - `media.service.js` → Lógica de negocio de contenido
+
+#### **📌 Open/Closed Principle (OCP)**
+- **Middlewares extensibles:** Nuevos middlewares se pueden agregar sin modificar existentes
+- **Validaciones modulares:** Nuevas validaciones se agregan como nuevas funciones
+- **Rate limiters configurables:** Diferentes limiters para distintos endpoints
+- **Sistema de respuestas:** `responses.js` permite agregar nuevos tipos sin modificar existentes
+
+#### **📌 Liskov Substitution Principle (LSP)**
+- **Middlewares intercambiables:** Todos los middlewares siguen la misma interfaz `(req, res, next)`
+- **Controladores consistentes:** Todos siguen el patrón `async (req, res, next)`
+- **Servicios estáticos:** Métodos de servicio intercambiables con misma signatura
+
+#### **📌 Interface Segregation Principle (ISP)**
+- **Middlewares específicos:** Cada middleware tiene una interfaz mínima y específica
+  - `authenticateToken` → Solo autenticación
+  - `requireAdmin` → Solo verificación de rol admin
+  - `requireOwnershipOrAdmin` → Solo verificación de propiedad
+- **Servicios segregados:** UserService no depende de funcionalidades que no usa
+- **Utilidades separadas:** JWT, respuestas y validaciones en módulos independientes
+
+#### **📌 Dependency Inversion Principle (DIP)**
+- **Inyección de dependencias:** Controladores dependen de abstracciones (servicios)
+- **Configuración externa:** Variables de entorno para configuraciones
+- **Modelos desacoplados:** Uso de servicios en lugar de acceso directo a modelos
+- **Middlewares como abstracciones:** Lógica de autenticación abstraída del controlador
+
+## � Enlaces y Recursos
+
+### **📚 Documentación y Testing**
+- 🌐 **Swagger UI:** [`http://localhost:4000/api/v1/docs`](http://localhost:4000/api/v1/docs)
+- 📮 **Colección Postman:** [🔗 Importar Collection de Postman](https://documenter.getpostman.com/view/42985627/2sB3HgQiJJ)
+- 📹 **Video Explicativo:** [🎥 Ver explicación del proyecto](https://www.tiktok.com/@davidgomez071/video/7545314048234032440)
+
+### **🔗 Repositorios Relacionados**
+- 🎨 **Frontend React:** [🔗 KarenFlix Frontend](https://github.com/joanomana/karenflixfrontend/tree/c78be754e7953d29df38871f0750edeef8562f36)
+- 🛠️ **Backend API:** [🔗 Este repositorio](https://github.com/joanomana/KarenFlixBackend)
+
+### **🌐 Enlaces Útiles**
+- 📖 **API Base URL:** `http://localhost:4000/api/v1`
+- 🏥 **Health Check:** `http://localhost:4000/health`
+- 📊 **Swagger Docs:** `http://localhost:4000/api/v1/docs`
+
+---
+
+## �📞 Soporte y Contacto
 
 - � **Email:** [contacto@karenflix.com]
 - 🐛 **Issues:** [GitHub Issues](https://github.com/joanomana/KarenFlixBackend/issues)

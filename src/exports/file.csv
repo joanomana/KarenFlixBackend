@@ -1,0 +1,28 @@
+[
+    {
+        "_id": "68b9af8ec5c94e69ee8da7a3",
+        "mediaId": "68b9ae43febe24bef46efd5f",
+        "userId": "68b9ae42febe24bef46efd45",
+        "title": "Imperdible",
+        "comment": "Visualmente impactante y con una historia atrapante.",
+        "rating": 9,
+        "likesCount": 0,
+        "dislikesCount": 0,
+        "createdAt": "2025-09-04T15:26:06.729Z",
+        "updatedAt": "2025-09-04T15:26:06.729Z",
+        "__v": 0
+    },
+    {
+        "_id": "68b9b75d7ef562acffcb1cb5",
+        "mediaId": "68b9ae43febe24bef46efd5f",
+        "userId": "78b9ae42febe24bef46efd45",
+        "title": "Imperdible",
+        "comment": "Visualmente impactante y con una historia atrapante.",
+        "rating": 9,
+        "likesCount": 0,
+        "dislikesCount": 0,
+        "createdAt": "2025-09-04T15:26:06.729Z",
+        "updatedAt": "2025-09-04T15:26:06.729Z",
+        "__v": 0
+    }
+]

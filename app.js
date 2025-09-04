@@ -14,7 +14,7 @@ import authRoutes from './src/routes/auth.route.js';
 import userRoutes from './src/routes/user.route.js';
 import mediaRoutes from './src/routes/media.route.js';
 import reviewRoutes from "./src/routes/review.route.js"
-
+import exportRoutes from "./src/routes/export.route.js"
 // Configurar Swagger
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './src/config/swagger.js';
@@ -60,7 +60,9 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/media', mediaRoutes);
-app.use("/api/v1/reviews",reviewRoutes)
+app.use("/api/v1/reviews",reviewRoutes);
+app.use("/api/v1/export",exportRoutes)
+
 
 
 

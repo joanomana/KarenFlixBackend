@@ -12,21 +12,21 @@ try {
         
         // Lista de seeders disponibles
         const seeders = [
-            {
-                name: 'Users',
-                seeder: seedUsers,
-                description: 'Crear usuarios de prueba'
-            },
-            {
-                name: 'Media',
-                seeder: seedMedia,
-                description: 'Crear medios de prueba'
-            },
             // {
-            //     name: 'Reviews',
-            //     seeder: seedReviews,
-            //     description: 'Crear reviews de prueba'
-            // }
+            //     name: 'Users',
+            //     seeder: seedUsers,
+            //     description: 'Crear usuarios de prueba'
+            // },
+            // {
+            //     name: 'Media',
+            //     seeder: seedMedia,
+            //     description: 'Crear medios de prueba'
+            // },
+            // {
+            //      name: 'Reviews',
+            //      seeder: seedReviews,
+            //      description: 'Crear reviews de prueba'
+            //  }
         ];
         console.log(`📋 Seeders disponibles: ${seeders.length}`);
         

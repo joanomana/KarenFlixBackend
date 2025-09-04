@@ -3,6 +3,8 @@ import Media from '../models/Media.js';
 import Review from '../models/Review.js';
 import ReviewReaction from '../models/ReviewReaction.js';
 import { validationResult } from 'express-validator';
+import {createNotificationForReview} from './notification.controller.js'
+import Notification from "../models/Notification.js"
 
 /**
  * (Opcional) Actualiza weightedScore del Media en base a métricas actuales.
@@ -43,13 +45,14 @@ export const createReview = async (req, res, next) => {
 
     const media = await Media.findById(mediaId).lean();
     if (!media) return res.status(404).json({ message: 'Media no encontrada' });
-
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-      const [review] = await Review.create([{
-        mediaId, userId, title, comment, rating
-      }], { session });
+      const review = {mediaId,userId,title,comment,rating}
+      const review1 = await Review.create([review], { session });
+      const rew = review1[0]
+      
+      await createNotificationForReview(rew._id,rew.userId,rew.mediaId)
 
       // Incremental: newAvg = (oldAvg*oldCount + rating) / (oldCount+1)
       await Media.updateOne(
@@ -77,7 +80,7 @@ export const createReview = async (req, res, next) => {
       await session.commitTransaction();
       session.endSession();
 
-      return res.status(201).json(review);
+      return res.status(201).json(review1);
     } catch (err) {
       await session.abortTransaction();
       session.endSession();
